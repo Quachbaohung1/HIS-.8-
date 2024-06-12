@@ -1,11 +1,7 @@
 import datetime
 import requests
 import json
-
-# Base url
-base_url = "http://115.79.31.186:1096"
-# Auth token
-auth_token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6IjM4MzkiLCJyb2xlIjoiQWRtaW4iLCJBY2NvdW50TmFtZSI6Imh1bmdxYiIsIkNsaWVudElwQWRkcmVzcyI6Ijo6MSIsIklzTG9jYWxJcCI6IlRydWUiLCJuYmYiOjE3MTUxODQ2NDIsImV4cCI6MTcxNTE4ODI0MiwiaWF0IjoxNzE1MTg0NjQyfQ.CihuC246iqFUos4MNZtNWs2q_SBOtmbXz4NRNuRQ4rg"
+from Cấu_hình.Setup import base_url_2, auth_token_2
 
 
 # Lấy ngày tháng từ hàm GET ở file Tiếp nhận
@@ -25,9 +21,8 @@ def date_formatted():
 def check_patient_in_room():
     print("Hàm check_patient_in_room được gọi")
     date = date_formatted()
-    url = f"{base_url}/pms/Visits/VisitFullEntries/149?fromDate={date}&TxEntryStatus=1&ExcludedVisitAttr=Empty"
-    headers = {"Authorization": auth_token}
-
+    url = f"{base_url_2}/Visits/VisitFullEntries/149?fromDate={date}&TxEntryStatus=1&ExcludedVisitAttr=Empty"
+    headers = {"Authorization": auth_token_2}
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -38,9 +33,7 @@ def check_patient_in_room():
     except json.JSONDecodeError as e:
         print(f"Failed to decode JSON: {e}")
         return []
-
     patient_ids = []
-
     if isinstance(response_data, list):
         for item in response_data:
             patient_id = item.get("patientId")
@@ -59,45 +52,15 @@ def check_patient_in_room():
     return patient_ids
 
 
-class EntryIdManager:
-    def __init__(self):
-        self.entry_ids = []
-        self.current_index = 0
-
-    def load_entry_ids(self):
-        from Tiếp_nhận.POST import process_patient_from_excel
-        # self.entry_ids = process_patient_from_excel()  # Lấy danh sách entry_id từ file Excel
-        self.entry_ids = [28779]
-        self.current_index = 0  # Reset chỉ số
-
-    def get_next_entry_id(self):
-        if not self.entry_ids or self.current_index >= len(self.entry_ids):
-            print("No more entry_ids available.")
-            return None
-
-        entry_id = self.entry_ids[self.current_index]
-        self.current_index += 1
-        return entry_id
-
-
-# Tạo instance của EntryIdManager và load danh sách entry_ids
-entry_id_manager = EntryIdManager()
-entry_id_manager.load_entry_ids()
-
-
 # Hiển thị entry_visit
-def check_visit_enty():
-    entry_id = entry_id_manager.get_next_entry_id()
-    if entry_id is None:
-        return []
-
+def check_visit_enty(entry_id):
     try:
-        url = f"{base_url}/pms/VisitEntries/{entry_id}"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/VisitEntries/{entry_id}"
+        headers = {"Authorization": auth_token_2}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         visit_id = response.json()["visitId"]
-        print("visit_id:", visit_id)
+        print(f"\nvisit_id for entry_id {entry_id}: {visit_id}")
         return [visit_id]
     except requests.RequestException as e:
         print(f"Request failed: {e}")
@@ -108,12 +71,12 @@ def check_visit_enty():
 
 
 # Lấy thông tin bệnh nhân GetDeleted
-def check_information_patient_initial():
-    visit_ids = check_visit_enty()
+def check_information_patient_initial(entry_id):
+    visit_ids = check_visit_enty(entry_id)
     visit_idas = []
     for visit_id in visit_ids:
-        url = f"{base_url}/pms/Visits/Id/{visit_id}?isGetDeleted=False"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/Visits/Id/{visit_id}?isGetDeleted=False"
+        headers = {"Authorization": auth_token_2}
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
@@ -136,8 +99,8 @@ def check_information_patient_subsequent(all_info):
     if visitIds:
         # Duyệt qua các visit_id trong danh sách thông tin
         for visit_id in visitIds:
-            url = f"{base_url}/pms/Visits/Id/{visit_id}?isGetDeleted=False"
-            headers = {"Authorization": auth_token}
+            url = f"{base_url_2}/Visits/Id/{visit_id}?isGetDeleted=False"
+            headers = {"Authorization": auth_token_2}
 
             try:
                 response = requests.get(url, headers=headers)
@@ -169,19 +132,19 @@ def check_information_patient_subsequent(all_info):
 
 
 # Lấy thông tin bệnh nhân để update
-def get_all_info():
+def get_all_info(entry_id):
     all_info = []
-    visit_idas = check_information_patient_initial()
+    visit_idas = check_information_patient_initial(entry_id)
 
     for visit_id in visit_idas:
-        url = f"{base_url}/pms/VisitEntries/VisitId/{visit_id}"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/VisitEntries/VisitId/{visit_id}"
+        headers = {"Authorization": auth_token_2}
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             response_json = response.json()
 
-            all_info.extend([
+            all_info.extend(
                 {
                     "entryId": int(item.get("entryId")),
                     "visitId": int(item.get("visitId")),
@@ -203,7 +166,7 @@ def get_all_info():
                     "insCardId": int(item.get("insCardId", 0))
                 }
                 for item in response_json
-            ])
+            )
 
         except requests.RequestException as e:
             print(f"Lỗi khi thực hiện yêu cầu: {e}")
@@ -215,8 +178,8 @@ def get_all_info():
 def get_visit_ids(all_info):
     for info in all_info:
         visit_id = info.get("visitId")
-        url = f"{base_url}/pms/Visits/Id/{visit_id}?isGetDeleted=False"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/Visits/Id/{visit_id}?isGetDeleted=False"
+        headers = {"Authorization": auth_token_2}
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()

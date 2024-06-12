@@ -135,7 +135,6 @@ def check_information_patient_subsequent(all_info):
 
 
 # Lấy thông tin bệnh nhân để update
-
 def get_all_info(entry_id):
     all_info = []
     visit_idas = check_information_patient_initial(entry_id)

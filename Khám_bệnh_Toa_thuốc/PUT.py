@@ -1,6 +1,8 @@
 import numpy as np
 import requests
 import pandas as pd
+from Cấu_hình.Setup import base_url_2, auth_token_2
+from Tiếp_nhận.POST import compare_data
 
 # Base url
 base_url = "http://115.79.31.186:1096"
@@ -13,15 +15,6 @@ def clean_data(value):
         return value.apply(clean_data)
     else:
         return str(value) if not pd.isna(value) else None
-
-
-# def update_information_patient(all_info, data):
-#     headers = {"Authorization": auth_token}
-#     for info in all_info:
-#         entryId = info['entryId']
-#         url = f"{base_url}/pms/VisitEntries/{entryId}?forceNull=True&ptFullAddress=5%2F49+Ntl%2C+Ph%C6%B0%E1%BB%9Dng+07%2C+Qu%E1%BA%ADn+B%C3%ACnh+Th%E1%BA%A1nh%2C+Th%C3%A0nh+ph%E1%BB%91+H%E1%BB%93+Ch%C3%AD+Minh&isPassMedAIValid=&isPassMedAIValidOtherPx=False&isPassInteraction=False&isRemoveAllConsulation=True&isUpdateEntryValOnly=False&isBackupStatus=True"
-#         response = requests.put(url, json=data, headers=headers)
-#         response.raise_for_status()
 
 
 def prepare_information_data(row, info):
@@ -133,31 +126,31 @@ def prepare_medicine_data(row, info):
         "TxtDoseNO": clean_data(row['TxtDoseNO']),
         "TxtDoseAN": clean_data(row['TxtDoseAN']),
         "UseWeekDay": int(row['UseWeekDay']),
-        "UseDays": int(row['UseDays']),
+        "UseDays": handle_null(row['UseDays']),
         "Attribute": int(row['Attribute']),
         "IsPaid": IsPaid,
         "StoreId": int(row['StoreIds']),
         "InvSource": int(row['InvSource']),
-        "MedStrenght": str(row['MedStrenght']),
-        "MedUseRoute": str(row['MedUseRoute1']),
+        "MedStrenght": clean_data(row['MedStrenght']),
+        "MedUseRoute": clean_data(row['MedUseRoute1']),
         "MedItem": {
             "ItemId": int(row['ItemIds']),
             "InsIndex": clean_data(row['InsIndex']),
-            "Code": str(row['Code2']),
+            "Code": clean_data(row['Code2']),
             "Type": int(row['Type']),
             "ItemCat": int(row['ItemCat']),
             "ATC": clean_data(row['ATC']),
             "Name": str(row['Name']),
             "Description": clean_data(row['Description']),
-            "NtlCode": str(row['NtlCode']),
+            "NtlCode": clean_data(row['NtlCode']),
             "NtlName": str(row['NtlName']),
-            "Unit": str(row['Unit']),
-            "PkgUnit": str(row['PkgUnit']),
-            "PkgUnitText": str(row['PkgUnitText']),
-            "UsageUnit": str(row['UsageUnit']),
+            "Unit": clean_data(row['Unit']),
+            "PkgUnit": clean_data(row['PkgUnit']),
+            "PkgUnitText": clean_data(row['PkgUnitText']),
+            "UsageUnit": clean_data(row['UsageUnit']),
             "PPP": int(row['PPP']),
             "PPU": int(row['PPU']),
-            "MedAI": str(row['MedAI']),
+            "MedAI": clean_data(row['MedAI']),
             "MedUseRoute": clean_data(row['MedUseRoute']),
             "MedDosageForm": clean_data(row['MedDosageForm']),
             "MedStrenght": str(row['MedStrenght']),
@@ -167,7 +160,7 @@ def prepare_medicine_data(row, info):
             "MfrName": str(row['MfrName']),
             "MfrAddr": str(row['MfrAddr']),
             "MfrCountry": str(row['MfrCountry']),
-            "InsCode": str(row['InsCode']),
+            "InsCode": clean_data(row['InsCode']),
             "InsName": str(row['InsName']),
             "InsPayRatio1": int(row['InsPayRatio1']),
             "Price": sanitize_float(row['Price']),
@@ -177,7 +170,7 @@ def prepare_medicine_data(row, info):
             "Status": int(row['Status']),
             "BidGroupCode": int(row['BidGroupCode']),
             "BidPackageCode": int(row['BidPackageCode']),
-            "BidDocNo": str(row['BidDocNo']),
+            "BidDocNo": clean_data(row['BidDocNo']),
             "SysFullName": str(row['SysFullName']),
             "ProcessingMethodCode": clean_data(row['ProcessingMethodCode']),
             "Note": clean_data(row['Note']),
@@ -228,7 +221,7 @@ def prepare_medicine_data(row, info):
         "PxItems": px_items,
         "service": {
             "serviceId": int(row['ServiceId']),
-            "code": str(row['Code1']),
+            "code": clean_data(row['Code']),
             "typeL1": int(row['TypeL1']),
             "typeL2": int(row['TypeL2']),
             "typeL3": int(row['TypeL3']),
@@ -241,8 +234,8 @@ def prepare_medicine_data(row, info):
             "attribute": int(row['Attribute2']),
             "nationalCode": NationalCode,
             "status": int(row['Status']),
-            "insPrice": sanitize_float(row['InsPrice']),
-            "price": sanitize_float(row['Price']),
+            "insPrice": float(row['InsPrice']),
+            "price": float(row['Price']),
             "priceId": int(row['PriceId']),
             "serviceGroupName": ServiceGroupName
         },
@@ -254,21 +247,43 @@ def prepare_medicine_data(row, info):
 
     return medicine_data, medicine_data["entryId"]
 
+
 def update_information_patient(all_info, data):
-    headers = {"Authorization": auth_token}
-    for info in all_info:
-        entryId = info['entryId']
-        url = f"{base_url}/pms/VisitEntries/{entryId}?forceNull=True&ptFullAddress=5%2F49+Ntl%2C+Ph%C6%B0%E1%BB%9Dng+07%2C+Qu%E1%BA%ADn+B%C3%ACnh+Th%E1%BA%A1nh%2C+Th%C3%A0nh+ph%E1%BB%91+H%E1%BB%93+Ch%C3%AD+Minh&isPassMedAIValid=&isPassMedAIValidOtherPx=False&isPassInteraction=False&isRemoveAllConsulation=True&isUpdateEntryValOnly=False&isBackupStatus=True"
-        response = requests.put(url, json=data, headers=headers)
-        response.raise_for_status()
+    headers = {"Authorization": auth_token_2}
+    try:
+        for info in all_info:
+            entryId = info['entryId']
+            url = f"{base_url_2}/VisitEntries/{entryId}?forceNull=True&ptFullAddress=5%2F49+Ntl%2C+Ph%C6%B0%E1%BB%9Dng+07%2C+Qu%E1%BA%ADn+B%C3%ACnh+Th%E1%BA%A1nh%2C+Th%C3%A0nh+ph%E1%BB%91+H%E1%BB%93+Ch%C3%AD+Minh&isPassMedAIValid=&isPassMedAIValidOtherPx=False&isPassInteraction=False&isRemoveAllConsulation=True&isUpdateEntryValOnly=False&isBackupStatus=True"
+            response = requests.put(url, json=data, headers=headers)
+            response.raise_for_status()
+            result_api = response.status_code
+            return result_api
+    except requests.exceptions.RequestException as e:
+        # Log the error for debugging purposes
+        print(f"\nAn error occurred during patient creation: {e}")
 
 
-def update_medicine_patient_from_excel(rows):
+def update_medicine_patient(all_info, data, verify_data):
+    headers = {"Authorization": auth_token_2}
+    try:
+        for info in all_info:
+            entryId = info['entryId']
+            url = f"{base_url_2}/VisitEntries/{entryId}?forceNull=True&ptFullAddress=5%2F49+Ntl%2C+Ph%C6%B0%E1%BB%9Dng+07%2C+Qu%E1%BA%ADn+B%C3%ACnh+Th%E1%BA%A1nh%2C+Th%C3%A0nh+ph%E1%BB%91+H%E1%BB%93+Ch%C3%AD+Minh&isPassMedAIValid=&isPassMedAIValidOtherPx=False&isPassInteraction=False&isRemoveAllConsulation=True&isUpdateEntryValOnly=False&isBackupStatus=True"
+            response = requests.put(url, json=data, headers=headers)
+            response.raise_for_status()
+            result_api = response.status_code
+            return result_api
+    except requests.exceptions.RequestException as e:
+        # Log the error for debugging purposes
+        print(f"\nAn error occurred during patient creation: {e}")
+
+
+def update_medicine_patient_from_excel(row, entry_id):
     from Khám_bệnh_Toa_thuốc.GET import get_all_info
     from Khám_bệnh_Toa_thuốc.POST import data_medicine
 
     # Lấy tất cả thông tin bệnh nhân
-    all_info = get_all_info()
+    all_info = get_all_info(entry_id)
     print("all_info:", all_info)
     if len(all_info) == 0:
         print("No information about patients.")
@@ -277,16 +292,16 @@ def update_medicine_patient_from_excel(rows):
     # Lặp qua tất cả các thông tin bệnh nhân
     for info in all_info:
         # Chuẩn bị thông tin bệnh nhân và lấy entryId
-        information_data, entryId = prepare_information_data(rows, info)
+        information_data, entryId = prepare_information_data(row, info)
 
         # Cập nhật thông tin bệnh nhân
         update_information_patient(all_info, information_data)
 
         # Chỉ định thuốc
-        data_medicine(rows)
+        data_medicine(row)
 
         # Chuẩn bị thông tin bệnh nhân và lấy entryId
-        medicine_data, entryId = prepare_medicine_data(rows, info)
+        medicine_data, entryId = prepare_medicine_data(row, info)
 
         # Cập nhật thông tin bệnh nhân
         update_information_patient(all_info, medicine_data)
