@@ -1,20 +1,16 @@
 import requests
 import pandas as pd
 from copy import deepcopy
-
-# Base url
-base_url = "http://115.79.31.186:1096"
-
-# Auth token
-auth_token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6IjM4MzkiLCJyb2xlIjoiQWRtaW4iLCJBY2NvdW50TmFtZSI6Imh1bmdxYiIsIkNsaWVudElwQWRkcmVzcyI6Ijo6MSIsIklzTG9jYWxJcCI6IlRydWUiLCJuYmYiOjE3MTUxODQ2NDIsImV4cCI6MTcxNTE4ODI0MiwiaWF0IjoxNzE1MTg0NjQyfQ.CihuC246iqFUos4MNZtNWs2q_SBOtmbXz4NRNuRQ4rg"
+from Cấu_hình.Setup import base_url_2, auth_token_2, base_url_4, auth_token_4
+from Tiếp_nhận.POST import compare_data, copy_sheet_values
 
 
 # Lấy thông tin tất cả các bệnh nhân
 def create_information_patient():
     from Khám_bệnh_CDDV.GET import check_patient_in_room
     patient_ids = check_patient_in_room()
-    url = f"{base_url}/pms/Patients/PatientIds"
-    headers = {"Authorization": auth_token}
+    url = f"{base_url_2}/Patients/PatientIds"
+    headers = {"Authorization": auth_token_2}
     data = patient_ids
     response = requests.post(url, json=data, headers=headers)
     response.raise_for_status()
@@ -26,8 +22,8 @@ def choose_patient():
     visit_ids = check_visit_enty()
     visit_idas = []
     for visit_id in visit_ids:
-        url = f"{base_url}/pms/VisitEntries/VisitIds"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/VisitEntries/VisitIds"
+        headers = {"Authorization": auth_token_2}
         data = [visit_id]
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
@@ -43,8 +39,8 @@ def choose_patient():
 def start_service_designation(entry_data):
     all_infoa = []
     for entryId in entry_data:
-        url = f"{base_url}/pms/VisitEntries/Ids?wardUnitId="
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/VisitEntries/Ids?wardUnitId="
+        headers = {"Authorization": auth_token_2}
         data = [entryId]
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
@@ -74,16 +70,17 @@ def start_service_designation(entry_data):
 
 
 # Chỉ định dịch vụ
-def create_service_designation(data):
-    url = f"{base_url}/cis/LabExams/AddWithItems?ptFullAddress=5%2F49+Ntl%2C+Ph%C6%B0%E1%BB%9Dng+07%2C+Qu%E1%BA%ADn+B%C3%ACnh+Th%E1%BA%A1nh%2C+Th%C3%A0nh+ph%E1%BB%91+H%E1%BB%93+Ch%C3%AD+Minh"
-    headers = {"Authorization": auth_token}
+def create_service_designation(data, verify_data):
+    url = f"{base_url_4}/LabExams/AddWithItems?ptFullAddress=5%2F49+Ntl%2C+Ph%C6%B0%E1%BB%9Dng+07%2C+Qu%E1%BA%ADn+B%C3%ACnh+Th%E1%BA%A1nh%2C+Th%C3%A0nh+ph%E1%BB%91+H%E1%BB%93+Ch%C3%AD+Minh"
+    headers = {"Authorization": auth_token_4}
     try:
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
         response_data = response.json()
-        frVisitEntryId = response_data.get("frVisitEntryId")
+        frVisitEntryId = response_data["frVisitEntryId"]
         print("frVisitEntryId:", frVisitEntryId)
-        return frVisitEntryId, response_data
+        result = compare_data(response_data, verify_data)
+        return response_data, frVisitEntryId, result
     except requests.exceptions.RequestException as e:
         # Log the error for debugging purposes
         print(f"\nAn error occurred during patient creation: {e}")
@@ -96,7 +93,7 @@ def data_of_create_service_designation(row, all_infoa, all_info):
 
     # Xử lý các giá trị null
     def handle_null(value):
-        return value if not pd.isna(value) else ''
+        return value if not pd.isna(value) else None
 
     # Lấy thông tin từ all_info
     for visit_info in visit_info_list:
@@ -130,7 +127,7 @@ def data_of_create_service_designation(row, all_infoa, all_info):
                 "Attribute": 1,
                 "FrVisitEntryId": entryId,
                 "CreateOn": onDate,
-                "CreateById": dxByStaffId,
+                "CreateById": handle_null(row['CreateById']),
                 "Status": int(row['Status']),
                 "WardUnitId": wardUnitId,
                 "ServiceName": handle_null(row['ServiceName']),
@@ -142,7 +139,7 @@ def data_of_create_service_designation(row, all_infoa, all_info):
                         "InsBenefitType": InsBenefitType,
                         "InsBenefitRatio": InsBenefitRatio,
                         "InsCardId": InsCardId,
-                        "Qty": float(row['Qty']),
+                        "Qty": handle_null(row['Qty']),
                         "Price": float(row['Price.1']),
                         "InsPrice": float(row['InsPrice.1']),
                         "InsPriceRatio": int(row['InsPriceRatio']),
@@ -190,7 +187,7 @@ def data_of_create_service_designation(row, all_infoa, all_info):
                     "InsBenefitType": InsBenefitType,
                     "InsBenefitRatio": InsBenefitRatio,
                     "InsCardId": InsCardId,
-                    "Qty": float(row['Qty']),
+                    "Qty": handle_null(row['Qty']),
                     "Price": float(row['Price.1']),
                     "InsPrice": float(row['InsPrice.1']),
                     "InsPriceRatio": int(row['InsPriceRatio']),
@@ -257,13 +254,14 @@ def write_data_to_excel(file_path, sheet_name, data):
 def process_check_patient_in_room():
     from Khám_bệnh_CDDV.GET import get_all_info
     # Thông tin
-    entry_ids = [28777]
+    entry_ids = [38392]
     for entry_id in entry_ids:
         all_info = get_all_info(entry_id)
         print("all_info:", all_info)
         if len(all_info) == 0:
             print("No information about patients.")
             return []
+        return all_info
 
 
 def process_insert_info_patient(file_path):
@@ -275,7 +273,7 @@ def process_insert_info_patient(file_path):
     excel_data = pd.read_excel(file_path, sheet_name=sheet_name)
 
     # Thông tin
-    entry_ids = [28777]
+    entry_ids = [38392]
 
     if len(entry_ids) != len(excel_data):
         raise ValueError("Số lượng entry_ids và số lượng hàng trong additional_data phải bằng nhau.")
@@ -291,25 +289,33 @@ def process_insert_info_patient(file_path):
 
         for info in all_info:
             # Chuẩn bị thông tin bệnh nhân và lấy entryId
-            information_data, entryId = prepare_information_data(row, info)
+            information_data, information_data["entryId"] = prepare_information_data(row, info)
 
             # Cập nhật thông tin bệnh nhân
-            update_information_patient(all_info, information_data)
+            result_api = update_information_patient(all_info, information_data)
+            return result_api
 
 
 def process_examination_services(file_path):
     from Khám_bệnh_CDDV.GET import get_all_info, get_data_by_entry_id
     from Khám_bệnh_CDDV.PUT import prepare_information_data, update_information_patient
     sheet_name = "Data"
+    check_sheet_name = "Check"
+    columns_to_copy = ["MedServiceId", "PriceId.1", "Qty", "Price.1", "ServiceCode", "ServiceName", "CreateById"]
 
     # Đọc dữ liệu gốc từ tệp Excel
     excel_data = pd.read_excel(file_path, sheet_name=sheet_name)
 
+    # Gọi hàm copy_sheet_values để sao chép các cột cần thiết sang sheet Verify
+    copy_sheet_values(file_path, sheet_name, check_sheet_name, columns_to_copy)
+
     # Thông tin
-    entry_ids = [28777]
+    entry_ids = [38392]
 
     if len(entry_ids) != len(excel_data):
         raise ValueError("Số lượng entry_ids và số lượng hàng trong additional_data phải bằng nhau.")
+
+    verify_data = pd.read_excel(file_path, sheet_name=check_sheet_name)
 
     # Sử dụng một vòng lặp để xử lý từng hàng với từng entry_id tương ứng
     for entry_id, (index, row) in zip(entry_ids, excel_data.iterrows()):
@@ -324,14 +330,15 @@ def process_examination_services(file_path):
         all_datas = []
 
         for info in all_info:
+            verify_row = verify_data.iloc[index]
             # Chuẩn bị thông tin bệnh nhân và lấy entryId
-            information_data, entryId = prepare_information_data(row, info)
+            information_data, information_data["entryId"] = prepare_information_data(row, info)
 
             # Cập nhật thông tin bệnh nhân
             update_information_patient(all_info, information_data)
 
             # Lấy dữ liệu theo entryId
-            entry_data = get_data_by_entry_id(entryId)
+            entry_data = get_data_by_entry_id(information_data["entryId"])
 
             # Bắt đầu chỉ định dịch vụ
             all_infoa = start_service_designation(entry_data)
@@ -339,8 +346,12 @@ def process_examination_services(file_path):
             # Tạo chỉ định dịch vụ và lấy frVisitEntryId
             service_data = data_of_create_service_designation(row, all_infoa, all_info)
 
-            frVisitEntryId, response_data = create_service_designation(service_data)
+            result = create_service_designation(service_data, verify_row)
 
+            if result is None:  # Check if response_data is None, indicating failure
+                response_data, frVisitEntryId, result = None, None, "Failed"
+            else:
+                response_data, frVisitEntryId, result = result
             # Thêm frVisitEntryId vào danh sách
             frVisitEntryIds.append(frVisitEntryId)
             all_datas.append(response_data)
@@ -350,37 +361,72 @@ def process_examination_services(file_path):
         return frVisitEntryIds, all_datas
 
 
-def process_kb_CDDV(file_path):
-    from Khám_bệnh_CDDV.PUT import update_information_patient_from_excel
-    sheet_name = "Data"
-
-    # Đọc dữ liệu gốc từ tệp Excel
-    excel_data = pd.read_excel(file_path, sheet_name=sheet_name)
-
-    # Tạo dữ liệu bổ sung và ghi vào file Excel
-    num_records_to_add = 2  # Số dòng dữ liệu bổ sung
-    additional_data = generate_additional_data(excel_data.tail(1), num_records_to_add)
-    write_data_to_excel(file_path, sheet_name, additional_data)
-
-    # Đọc lại dữ liệu đã ghi vào file
-    additional_data = pd.read_excel(file_path, sheet_name=sheet_name)
-
-    # Thông tin
-    entry_ids = [28777, 28779]
-    frVisitEntryIds = []
-    all_datas = []
-    # Kiểm tra xem số lượng entry_ids có bằng với số lượng hàng trong additional_data hay không
-    if len(entry_ids) != len(additional_data):
-        raise ValueError("Số lượng entry_ids và số lượng hàng trong additional_data phải bằng nhau.")
-
-    # Sử dụng một vòng lặp để xử lý từng hàng với từng entry_id tương ứng
-    for entry_id, (index, row) in zip(entry_ids, additional_data.iterrows()):
-        frVisitEntryId, response_data = update_information_patient_from_excel(row, entry_id)
-        frVisitEntryIds.append(frVisitEntryId)
-        all_datas.append(response_data)
-        print("frVisitEntryIds:", frVisitEntryIds)
-        print("all_datas:", all_datas)
-    return frVisitEntryIds, all_datas
+# def process_kb_CDDV(file_path):
+#     from Khám_bệnh_CDDV.GET import get_all_info, get_data_by_entry_id
+#     from Khám_bệnh_CDDV.PUT import prepare_information_data, update_information_patient
+#     sheet_name = "Data"
+#     check_sheet_name = "Check"
+#     columns_to_copy = ["MedServiceId", "PriceId.1", "Qty", "Price.1", "ServiceCode", "ServiceName", "CreateById"]
+#
+#     # Đọc dữ liệu gốc từ tệp Excel
+#     excel_data = pd.read_excel(file_path, sheet_name=sheet_name)
+#
+#     # Gọi hàm copy_sheet_values để sao chép các cột cần thiết sang sheet Verify
+#     copy_sheet_values(file_path, sheet_name, check_sheet_name, columns_to_copy)
+#
+#     # Tạo dữ liệu bổ sung và ghi vào file Excel
+#     num_records_to_add = 2  # Số dòng dữ liệu bổ sung
+#     additional_data = generate_additional_data(excel_data.tail(1), num_records_to_add)
+#     write_data_to_excel(file_path, sheet_name, additional_data)
+#
+#     # Đọc lại dữ liệu đã ghi vào file
+#     additional_data = pd.read_excel(file_path, sheet_name=sheet_name)
+#
+#     # Thông tin
+#     entry_ids = [38392]
+#
+#     # Sử dụng một vòng lặp để xử lý từng hàng với từng entry_id tương ứng
+#     for entry_id, (index, row) in zip(entry_ids, excel_data.iterrows()):
+#         # Lấy tất cả thông tin bệnh nhân
+#         all_info = get_all_info(entry_id)
+#         print("all_info:", all_info)
+#         if len(all_info) == 0:
+#             print("No information about patients.")
+#             return []
+#
+#         frVisitEntryIds = []
+#         all_datas = []
+#
+#         for info in all_info:
+#             verify_row = verify_data.iloc[index]
+#             # Chuẩn bị thông tin bệnh nhân và lấy entryId
+#             information_data, information_data["entryId"] = prepare_information_data(row, info)
+#
+#             # Cập nhật thông tin bệnh nhân
+#             update_information_patient(all_info, information_data)
+#
+#             # Lấy dữ liệu theo entryId
+#             entry_data = get_data_by_entry_id(information_data["entryId"])
+#
+#             # Bắt đầu chỉ định dịch vụ
+#             all_infoa = start_service_designation(entry_data)
+#
+#             # Tạo chỉ định dịch vụ và lấy frVisitEntryId
+#             service_data = data_of_create_service_designation(row, all_infoa, all_info)
+#
+#             result = create_service_designation(service_data, verify_row)
+#
+#             if result is None:  # Check if response_data is None, indicating failure
+#                 response_data, frVisitEntryId, result = None, None, "Failed"
+#             else:
+#                 response_data, frVisitEntryId, result = result
+#             # Thêm frVisitEntryId vào danh sách
+#             frVisitEntryIds.append(frVisitEntryId)
+#             all_datas.append(response_data)
+#
+#             print("frVisitEntryIds:", frVisitEntryIds)
+#             print("all_datas:", all_datas)
+#         return frVisitEntryIds, all_datas
 
 
 

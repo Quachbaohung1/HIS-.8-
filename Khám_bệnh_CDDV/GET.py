@@ -1,12 +1,7 @@
 import datetime
-import sys
 import requests
 import json
-
-# Base url
-base_url = "http://115.79.31.186:1096"
-# Auth token
-auth_token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6IjM4MzkiLCJyb2xlIjoiQWRtaW4iLCJBY2NvdW50TmFtZSI6Imh1bmdxYiIsIkNsaWVudElwQWRkcmVzcyI6Ijo6MSIsIklzTG9jYWxJcCI6IlRydWUiLCJuYmYiOjE3MTUxODQ2NDIsImV4cCI6MTcxNTE4ODI0MiwiaWF0IjoxNzE1MTg0NjQyfQ.CihuC246iqFUos4MNZtNWs2q_SBOtmbXz4NRNuRQ4rg"
+from Cấu_hình.Setup import base_url_2, auth_token_2, base_url_4, auth_token_4
 
 
 # Lấy ngày tháng từ hàm GET ở file Tiếp nhận
@@ -26,8 +21,8 @@ def date_formatted():
 def check_patient_in_room():
     print("Hàm check_patient_in_room được gọi")
     date = date_formatted()
-    url = f"{base_url}/pms/Visits/VisitFullEntries/149?fromDate={date}&TxEntryStatus=1&ExcludedVisitAttr=Empty"
-    headers = {"Authorization": auth_token}
+    url = f"{base_url_2}/Visits/VisitFullEntries/149?fromDate={date}&TxEntryStatus=1&ExcludedVisitAttr=Empty"
+    headers = {"Authorization": auth_token_2}
 
     try:
         response = requests.get(url, headers=headers)
@@ -63,8 +58,8 @@ def check_patient_in_room():
 # Hiển thị entry_visit
 def check_visit_enty(entry_id):
     try:
-        url = f"{base_url}/pms/VisitEntries/{entry_id}"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/VisitEntries/{entry_id}"
+        headers = {"Authorization": auth_token_2}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         visit_id = response.json()["visitId"]
@@ -83,8 +78,8 @@ def check_information_patient_initial(entry_id):
     visit_ids = check_visit_enty(entry_id)
     visit_idas = []
     for visit_id in visit_ids:
-        url = f"{base_url}/pms/Visits/Id/{visit_id}?isGetDeleted=False"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/Visits/Id/{visit_id}?isGetDeleted=False"
+        headers = {"Authorization": auth_token_2}
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
@@ -107,8 +102,8 @@ def check_information_patient_subsequent(all_info):
     if visitIds:
         # Duyệt qua các visit_id trong danh sách thông tin
         for visit_id in visitIds:
-            url = f"{base_url}/pms/Visits/Id/{visit_id}?isGetDeleted=False"
-            headers = {"Authorization": auth_token}
+            url = f"{base_url_2}/Visits/Id/{visit_id}?isGetDeleted=False"
+            headers = {"Authorization": auth_token_2}
 
             try:
                 response = requests.get(url, headers=headers)
@@ -146,8 +141,8 @@ def get_all_info(entry_id):
     visit_idas = check_information_patient_initial(entry_id)
 
     for visit_id in visit_idas:
-        url = f"{base_url}/pms/VisitEntries/VisitId/{visit_id}"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/VisitEntries/VisitId/{visit_id}"
+        headers = {"Authorization": auth_token_2}
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
@@ -189,8 +184,8 @@ def get_visit_ids(all_info):
 
     for info in all_info:
         visit_id = info.get("visitId")
-        url = f"{base_url}/pms/Visits/Id/{visit_id}?isGetDeleted=False"
-        headers = {"Authorization": auth_token}
+        url = f"{base_url_2}/Visits/Id/{visit_id}?isGetDeleted=False"
+        headers = {"Authorization": auth_token_2}
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
@@ -209,8 +204,8 @@ def get_visit_ids(all_info):
 
 def get_data_by_entry_id(entryId):
     entryIds = []
-    url = f"{base_url}/cis/TxVisits/{entryId}?attribute=2"
-    headers = {"Authorization": auth_token}
+    url = f"{base_url_4}/TxVisits/{entryId}?attribute=2"
+    headers = {"Authorization": auth_token_4}
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     response_json = response.json()
@@ -224,7 +219,7 @@ def get_data_by_entry_id(entryId):
 
 # isLoadItem=True
 def set_true(PatientId):
-    url = f"{base_url}/cis/LabExams/LoadAllByPatientId/{PatientId}?isLoadItem=True"
-    headers = {"Authorization": auth_token}
+    url = f"{base_url_4}/LabExams/LoadAllByPatientId/{PatientId}?isLoadItem=True"
+    headers = {"Authorization": auth_token_4}
     response = requests.get(url, headers=headers)
     response.raise_for_status()

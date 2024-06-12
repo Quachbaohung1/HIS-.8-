@@ -6,7 +6,6 @@ from Khám_bệnh_CDDV.POST import (
     process_check_patient_in_room,
     process_insert_info_patient,
     process_examination_services,
-    process_kb_CDDV,
 
 )
 
@@ -43,13 +42,15 @@ class TestProcessExamination(unittest.TestCase):
         self.assertEqual(result, expected_result,
                          f"Failed for check patient in room. Expected: {expected_result}, Actual: {str(result)}")
 
+    # Nhập đầy đủ thông tin khám bệnh của bệnh nhân
     def test_case_01(self):
-        file_path = "D://HIS api automation/DataTest/Khám bệnh - CDDV/TC_01.xlsx"
-        expected_result = [204]
+        file_path = "E://HIS api automation/DataTest/Khám bệnh - CDDV/TC_01.xlsx"
+        expected_result = 204
         self.case_Examination(file_path, expected_result, process_insert_info_patient)
 
+    # Không nhập dịch vụ
     def test_case_02(self):
-        file_path = "D://HIS api automation/DataTest/Khám bệnh - CDDV/TC_02.xlsx"
+        file_path = "E://HIS api automation/DataTest/Khám bệnh - CDDV/TC_02.xlsx"
         # Chạy hàm process_examination_services một lần và lưu kết quả vào biến tạm
         expected_result_temp = process_examination_services(file_path)
         # Ghi đè expected_result để đảm bảo chỉ gọi hàm một lần
@@ -59,8 +60,9 @@ class TestProcessExamination(unittest.TestCase):
         # Gọi self.test_case với file_path, expected_result và custom_process_func
         self.case_Examination(file_path, expected_result, custom_process_func)
 
+    # Không nhập bác sĩ
     def test_case_03(self):
-        file_path = "D://HIS api automation/DataTest/Khám bệnh - CDDV/TC_03.xlsx"
+        file_path = "E://HIS api automation/DataTest/Khám bệnh - CDDV/TC_03.xlsx"
         # Chạy hàm process_examination_services một lần và lưu kết quả vào biến tạm
         expected_result_temp = process_examination_services(file_path)
         # Ghi đè expected_result để đảm bảo chỉ gọi hàm một lần
@@ -70,8 +72,9 @@ class TestProcessExamination(unittest.TestCase):
         # Gọi self.test_case với file_path, expected_result và custom_process_func
         self.case_Examination(file_path, expected_result, custom_process_func)
 
+    # Không nhập số lượng
     def test_case_04(self):
-        file_path = "D://HIS api automation/DataTest/Khám bệnh - CDDV/TC_04.xlsx"
+        file_path = "E://HIS api automation/DataTest/Khám bệnh - CDDV/TC_04.xlsx"
         # Chạy hàm process_examination_services một lần và lưu kết quả vào biến tạm
         expected_result_temp = process_examination_services(file_path)
         # Ghi đè expected_result để đảm bảo chỉ gọi hàm một lần
@@ -81,10 +84,11 @@ class TestProcessExamination(unittest.TestCase):
         # Gọi self.test_case với file_path, expected_result và custom_process_func
         self.case_Examination(file_path, expected_result, custom_process_func)
 
+    # Nhập đầy đủ thông tin chỉ định dịch vụ thành công
     def test_case_05(self):
-        file_path = "D://HIS api automation/DataTest/Khám bệnh - CDDV/TC_05.xlsx"
+        file_path = "E://HIS api automation/DataTest/Khám bệnh - CDDV/TC_05.xlsx"
         # Chạy hàm process_examination_services một lần và lưu kết quả vào biến tạm
-        expected_result_temp = process_kb_CDDV(file_path)
+        expected_result_temp = process_examination_services(file_path)
         # Ghi đè expected_result để đảm bảo chỉ gọi hàm một lần
         expected_result = expected_result_temp
         # Tạo một hàm lambda hoặc hàm bình thường để truyền vào self.test_case
